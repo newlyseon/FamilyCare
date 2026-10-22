@@ -7,20 +7,30 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "nhis:recon": "node scripts/nhis-spike/recon.mjs"
+    "nhis:recon": "node scripts/nhis-spike/recon.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.2",
+    "@vercel/functions": "^3.10.3",
     "ai": "^7.0.148",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.0",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "playwright-core": "^1.64.1",

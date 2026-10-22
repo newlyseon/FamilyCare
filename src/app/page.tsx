@@ -1,69 +1,69 @@
-import Image from "next/image";
+import { desc } from "drizzle-orm";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { getDb } from "@/db";
+import { uploads } from "@/db/schema";
+import { uploadsEnabled } from "@/lib/guard";
+import { statusLabel } from "@/lib/status";
+import { UploadForm } from "./upload-form";
+
+async function UploadList() {
+  await connection();
+  if (!uploadsEnabled()) return null;
+  const rows = await getDb().select().from(uploads).orderBy(desc(uploads.createdAt)).limit(50);
+  if (rows.length === 0) return <p className="text-zinc-500">아직 올린 결과지가 없습니다.</p>;
+
+  return (
+    <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      {rows.map((row) => (
+        <li key={row.id}>
+          <Link href={`/uploads/${row.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+            <span className="min-w-0 truncate">{row.filename}</span>
+            <span className="shrink-0 text-sm text-zinc-500">
+              {statusLabel[row.status]} · {row.createdAt.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+async function UploadSection() {
+  await connection();
+  if (!uploadsEnabled()) {
+    return (
+      <p className="rounded-xl bg-zinc-100 p-4 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+        지금은 개발 중이라 이 주소에서는 업로드가 꺼져 있습니다.
+      </p>
+    );
+  }
+  return <UploadForm />;
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="mx-auto w-full max-w-2xl px-4 py-10">
+      <h1 className="text-2xl font-bold">FamilyCare</h1>
+      <p className="mt-1 text-zinc-600 dark:text-zinc-400">검진 결과지를 올리면 AI가 항목과 추적 권고를 정리해 줍니다.</p>
+
+      <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+        테스트 버전입니다. 로그인 기능이 없으니 실제 건강 정보는 올리지 마세요.
+      </p>
+
+      <section className="mt-6">
+        <Suspense fallback={null}>
+          <UploadSection />
+        </Suspense>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-lg font-semibold">올린 결과지</h2>
+        <Suspense fallback={<p className="text-zinc-500">불러오는 중…</p>}>
+          <UploadList />
+        </Suspense>
+      </section>
+    </main>
   );
 }
