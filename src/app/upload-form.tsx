@@ -1,8 +1,10 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
+import { LoaderCircle, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { analyzeUpload, registerUpload } from "./actions";
 
 type Step = "idle" | "uploading" | "analyzing" | "error";
@@ -16,6 +18,7 @@ const stepLabel: Record<Step, string> = {
 
 export function UploadForm() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState<string | null>(null);
   const busy = step === "uploading" || step === "analyzing";
@@ -43,29 +46,33 @@ export function UploadForm() {
   }
 
   return (
-    <div className="rounded-xl border-2 border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
-      <label className={`inline-block cursor-pointer rounded-lg bg-blue-600 px-5 py-3 text-base font-semibold text-white ${busy ? "pointer-events-none opacity-60" : "hover:bg-blue-700"}`}>
+    <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
+      <Button size="lg" disabled={busy} onClick={() => inputRef.current?.click()}>
+        {busy ? <LoaderCircle className="animate-spin" /> : <Upload />}
         결과지 올리기
-        <input
-          type="file"
-          accept="application/pdf,image/png,image/jpeg,image/webp"
-          className="sr-only"
-          disabled={busy}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) void handleFile(file);
-          }}
-        />
-      </label>
-      <p className="mt-3 text-sm text-zinc-500">PDF, PNG, JPG, WEBP · 최대 20MB</p>
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,image/png,image/jpeg,image/webp"
+        className="sr-only"
+        tabIndex={-1}
+        aria-label="결과지 파일 선택"
+        disabled={busy}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void handleFile(file);
+        }}
+      />
+      <p className="mt-3 text-sm text-muted-foreground">PDF, PNG, JPG, WEBP · 최대 20MB</p>
       {busy && (
         <p role="status" className="mt-4 text-base font-medium">
           {stepLabel[step]}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-4 text-base text-red-600">
+        <p role="alert" className="mt-4 text-base text-destructive">
           {error}
         </p>
       )}
