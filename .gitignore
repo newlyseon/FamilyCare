@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.env*.local
+
+# spike outputs (may contain real health data)
+/scripts/nhis-spike/out/
+/scripts/ai-extract/out/

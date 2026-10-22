@@ -1,0 +1,74 @@
+{
+  "examDate": "2025-11-14",
+  "institution": "한빛내과의원 건강검진센터",
+  "items": [
+    {
+      "name": "혈압",
+      "value": "138/86",
+      "judgment": "주의"
+    },
+    {
+      "name": "공복혈당",
+      "value": "108",
+      "judgment": "주의"
+    },
+    {
+      "name": "총콜레스테롤",
+      "value": "231",
+      "judgment": "주의"
+    },
+    {
+      "name": "LDL 콜레스테롤",
+      "value": "162",
+      "judgment": "주의"
+    },
+    {
+      "name": "AST",
+      "value": "28",
+      "judgment": "정상"
+    },
+    {
+      "name": "ALT",
+      "value": "31",
+      "judgment": "정상"
+    },
+    {
+      "name": "혈청 크레아티닌",
+      "value": "0.9",
+      "judgment": "정상"
+    },
+    {
+      "name": "흉부 X선",
+      "value": null,
+      "judgment": "정상"
+    },
+    {
+      "name": "위내시경",
+      "value": null,
+      "judgment": "주의"
+    },
+    {
+      "name": "대장내시경",
+      "value": null,
+      "judgment": "추적필요"
+    },
+    {
+      "name": "갑상선 초음파",
+      "value": null,
+      "judgment": "추적필요"
+    }
+  ],
+  "followUps": [
+    {
+      "target": "대장내시경",
+      "recommendedMonths": 36
+    },
+    {
+      "target": "갑상선 초음파",
+      "recommendedMonths": 6
+    }
+  ],
+  "conditionalAdvice": [
+    "위염"
+  ]
+}
