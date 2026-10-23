@@ -1,12 +1,12 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { ALLOWED_CONTENT_TYPES, MAX_UPLOAD_BYTES, assertUploadsEnabled } from "@/lib/guard";
+import { ALLOWED_CONTENT_TYPES, MAX_UPLOAD_BYTES, assertDataEnabled } from "@/lib/guard";
 
 // 브라우저가 Blob에 직접 올릴 수 있도록 업로드 토큰을 발급한다.
 // 업로드 완료 콜백은 로컬에서 받을 수 없으므로 쓰지 않고, 클라이언트가 registerUpload로 알려준다.
 export async function POST(request: Request) {
   const body = (await request.json()) as HandleUploadBody;
   try {
-    assertUploadsEnabled();
+    assertDataEnabled();
     const result = await handleUpload({
       body,
       request,

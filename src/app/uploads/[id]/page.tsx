@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
-import { checkupItems, checkups, followUps, uploads } from "@/db/schema";
-import { uploadsEnabled } from "@/lib/guard";
+import { checkupItems, checkups, followUps, members, uploads } from "@/db/schema";
+import { dataEnabled } from "@/lib/guard";
 import { statusLabel, statusVariant } from "@/lib/status";
 import { RetryAnalyze } from "./retry-analyze";
 import { ReviewForm } from "./review-form";
@@ -70,9 +70,10 @@ async function Saved({ uploadId }: { uploadId: string }) {
 
 async function Review({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uploadsEnabled() || !/^[0-9a-f-]{36}$/.test(id)) notFound();
+  if (!dataEnabled() || !/^[0-9a-f-]{36}$/.test(id)) notFound();
   const upload = await getDb().query.uploads.findFirst({ where: eq(uploads.id, id) });
   if (!upload) notFound();
+  const member = upload.memberId ? await getDb().query.members.findFirst({ where: eq(members.id, upload.memberId) }) : null;
 
   const fileUrl = `/api/files/${upload.id}`;
   const isPdf = upload.contentType === "application/pdf";
@@ -80,7 +81,10 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="min-w-0 truncate font-heading text-xl font-bold">{upload.filename}</h1>
+        <div className="min-w-0">
+          {member && <p className="text-sm text-muted-foreground">{member.name}의 결과지</p>}
+          <h1 className="truncate font-heading text-xl font-bold">{upload.filename}</h1>
+        </div>
         <Badge variant={statusVariant[upload.status]}>{statusLabel[upload.status]}</Badge>
       </div>
 
