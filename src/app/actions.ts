@@ -62,7 +62,7 @@ export async function analyzeUpload(id: string): Promise<Result> {
 }
 
 // 사용자가 확인·수정한 내용을 검진 기록으로 저장한다.
-export async function confirmCheckup(id: string, input: ConfirmedCheckup): Promise<Result> {
+export async function confirmCheckup(id: string, input: ConfirmedCheckup): Promise<Result<{ memberId: string | null }>> {
   assertDataEnabled();
   const parsed = confirmedCheckupSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
@@ -92,7 +92,6 @@ export async function confirmCheckup(id: string, input: ConfirmedCheckup): Promi
     }
     await tx.update(uploads).set({ status: "confirmed" }).where(eq(uploads.id, id));
   });
-  revalidatePath("/");
-  revalidatePath(`/uploads/${id}`);
-  return { ok: true, data: undefined };
+  revalidatePath("/", "layout");
+  return { ok: true, data: { memberId: upload.memberId } };
 }

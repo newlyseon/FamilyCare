@@ -7,8 +7,8 @@ Figma: [FamilyCare Design System](https://www.figma.com/design/LThAPsWk7FSd9ur2W
 | Figma 페이지 | 내용 |
 | --- | --- |
 | Foundations | 색(Light/Dark), 모서리, 글자 스타일 견본 |
-| Components | Button, Input, Select, Badge, Alert, 아이콘 |
-| Screens | 홈, AI 초안 검토, 저장 완료 (휴대폰 390px) |
+| Components | Button, Input, Select, Badge, Alert, Tab bar, Segment, Metric, 아이콘 |
+| Screens | 홈(첫 방문, 다시 방문), 올해 검진, 기록, AI 초안 검토, 저장 완료 (휴대폰 390px). 아래 탭 4개 구조는 요구사항 정의서 2-1 참고 |
 
 ## 토큰 이름 맞추기
 

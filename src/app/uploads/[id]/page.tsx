@@ -125,7 +125,7 @@ export default function Page({ params }: PageProps<"/uploads/[id]">) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
       <Button asChild variant="link" className="px-0">
-        <Link href="/">← 목록으로</Link>
+        <Link href="/records">← 기록으로</Link>
       </Button>
       <div className="mt-4">
         <Suspense fallback={<p className="text-muted-foreground">불러오는 중…</p>}>

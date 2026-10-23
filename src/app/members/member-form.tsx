@@ -21,17 +21,18 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-sm text-destructive">{message}</p> : null;
 }
 
-export function MemberForm({ action, member, submitLabel }: { action: Action; member?: Member; submitLabel: string }) {
+export function MemberForm({ action, member, submitLabel, next }: { action: Action; member?: Member; submitLabel: string; next?: string }) {
   const [state, formAction, pending] = useActionState(action, {});
   // React는 액션이 끝나면 폼을 초기화하므로, 검증 실패 시 돌려받은 값으로 입력칸을 다시 그린다.
   return (
     <form action={formAction} className="space-y-6" noValidate>
-      <Fields key={state.values ? JSON.stringify(state.values) : "initial"} state={state} member={member} pending={pending} submitLabel={submitLabel} />
+      {next && <input type="hidden" name="next" value={next} />}
+      <Fields key={state.values ? JSON.stringify(state.values) : "initial"} state={state} member={member} pending={pending} submitLabel={submitLabel} cancelHref={next ?? "/members"} />
     </form>
   );
 }
 
-function Fields({ state, member, pending, submitLabel }: { state: MemberFormState; member?: Member; pending: boolean; submitLabel: string }) {
+function Fields({ state, member, pending, submitLabel, cancelHref }: { state: MemberFormState; member?: Member; pending: boolean; submitLabel: string; cancelHref: string }) {
   const v = state.values;
   const e = state.fieldErrors ?? {};
   const [smoking, setSmoking] = useState(v?.smoking ?? member?.smoking ?? "never");
@@ -135,7 +136,7 @@ function Fields({ state, member, pending, submitLabel }: { state: MemberFormStat
           {submitLabel}
         </Button>
         <Button asChild variant="outline" size="lg">
-          <Link href="/">취소</Link>
+          <Link href={cancelHref}>취소</Link>
         </Button>
       </div>
     </>

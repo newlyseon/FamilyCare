@@ -58,7 +58,8 @@ export function ReviewForm({ uploadId, draft }: { uploadId: string; draft: Check
         conditionalAdvice: advice,
       });
       if (!result.ok) setError(result.error);
-      else router.refresh();
+      // 저장하면 업로드 화면이 아니라 그 부모님의 홈으로 돌아가 결과를 바로 보여준다.
+      else router.push(result.data.memberId ? `/?member=${result.data.memberId}&saved=1` : "/records");
     });
   }
 

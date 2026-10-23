@@ -19,10 +19,12 @@ const stepLabel: Record<Step, string> = {
   error: "",
 };
 
-export function UploadForm({ members }: { members: { id: string; name: string }[] }) {
+export function UploadForm({ members, defaultMemberId }: { members: { id: string; name: string }[]; defaultMemberId?: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [memberId, setMemberId] = useState(members.length === 1 ? members[0].id : "");
+  const [memberId, setMemberId] = useState(
+    members.some((m) => m.id === defaultMemberId) ? defaultMemberId! : members.length === 1 ? members[0].id : "",
+  );
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState<string | null>(null);
   const busy = step === "uploading" || step === "analyzing";
@@ -32,7 +34,7 @@ export function UploadForm({ members }: { members: { id: string; name: string }[
       <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
         <p className="text-base">결과지를 올리기 전에 부모님 정보를 먼저 추가하세요.</p>
         <Button asChild size="lg" className="mt-4">
-          <Link href="/members/new">부모님 추가</Link>
+          <Link href="/members/new?next=/upload">부모님 추가</Link>
         </Button>
       </div>
     );

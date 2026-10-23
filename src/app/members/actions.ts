@@ -27,13 +27,19 @@ function parse(formData: FormData) {
   return { state: { error: "입력값을 확인하세요", fieldErrors, values } } as const;
 }
 
+// 열린 리디렉트를 막기 위해 앱 내부 경로만 허용한다.
+function nextPath(formData: FormData, fallback: string) {
+  const next = formData.get("next");
+  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
+
 export async function createMember(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
   assertDataEnabled();
   const result = parse(formData);
   if (!result.data) return result.state;
   await getDb().insert(members).values(result.data);
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/", "layout");
+  redirect(nextPath(formData, "/members"));
 }
 
 export async function updateMember(id: string, _prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
@@ -46,6 +52,6 @@ export async function updateMember(id: string, _prev: MemberFormState, formData:
     .where(eq(members.id, id))
     .returning({ id: members.id });
   if (updated.length === 0) return { error: "프로필을 찾을 수 없습니다" };
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/", "layout");
+  redirect(nextPath(formData, "/members"));
 }
