@@ -7,7 +7,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { followUpDue, followUpState, formatExamDate, formatYearMonth } from "@/lib/follow-up";
+import { formatExamDate, formatYearMonth } from "@/lib/follow-up";
+import { groupFollowUps } from "@/lib/follow-up-groups";
 import { dataEnabled } from "@/lib/guard";
 import { ageThisYear } from "@/lib/member-schema";
 import { getLatestCheckup, getMemberHistory, getMembers, getPendingReviews, hasConfirmedCheckup } from "@/lib/queries";
@@ -152,16 +153,13 @@ async function Returning({ members, memberParam, saved }: { members: MemberRow[]
     );
   }
 
-  const follows = latest.follows
-    .map((f) => {
-      const due = followUpDue(latest.examDate, f.recommendedMonths);
-      return { ...f, due, state: followUpState(due) };
-    })
-    .sort((a, b) => (a.due?.getTime() ?? Infinity) - (b.due?.getTime() ?? Infinity));
-  const urgent = follows.filter((f) => f.state === "overdue" || f.state === "soon");
-  const scheduled = follows.filter((f) => f.state === "scheduled" || f.state === "unknown");
+  const history = await getMemberHistory(member.id);
+  // 추가검사 결과까지 반영한 추적 상태 (기록 탭과 같은 기준)
+  const groups = groupFollowUps(history);
+  const urgent = groups.now;
+  const scheduled = groups.scheduled;
   const flagged = latest.items.filter((i) => i.judgment === "주의" || i.judgment === "이상" || i.judgment === "추적필요");
-  const verdicts = judgeScreenings(member, await getMemberHistory(member.id));
+  const verdicts = judgeScreenings(member, history);
   const required = verdicts.filter((v) => v.category === "required");
   const recommended = verdicts.filter((v) => v.category === "recommended");
   const skipped = verdicts.filter((v) => v.category === "skip");
@@ -186,19 +184,29 @@ async function Returning({ members, memberParam, saved }: { members: MemberRow[]
         <Metric value={scheduled.length} label="정기 추적" />
       </div>
 
-      {urgent.map((f) => (
-        <Card key={f.id} size="sm" className="ring-destructive/40">
-          <CardHeader>
-            <CardTitle className="text-base">{f.target}</CardTitle>
-            <CardDescription>
-              {f.recommendedTiming} 추적 권고{f.due ? ` · ${formatYearMonth(f.due)}까지${f.state === "overdue" ? "였어요" : ""}` : ""}
-            </CardDescription>
-            <CardAction>
-              <Badge variant={f.state === "overdue" ? "destructive" : "warning"}>{f.state === "overdue" ? "기한 지남" : "곧 다가옴"}</Badge>
-            </CardAction>
-          </CardHeader>
-        </Card>
-      ))}
+      {urgent.map(({ follow: f, eff }) => {
+        const overdue = eff.status === "open" && eff.state === "overdue";
+        const label = eff.status === "treatment" ? "치료 필요" : overdue ? "기한 지남" : eff.status === "open" && eff.state === "unknown" ? "시기 모름" : "곧 다가옴";
+        return (
+          <Card key={f.id} size="sm" className="ring-destructive/40">
+            <CardHeader>
+              <CardTitle className="text-base">{f.target}</CardTitle>
+              <CardDescription>
+                {f.recommendedTiming} 추적 권고
+                {eff.status === "open" && eff.due ? ` · ${formatYearMonth(eff.due)}까지${overdue ? "였어요" : ""}` : ""}
+              </CardDescription>
+              <CardAction>
+                <Badge variant={eff.status === "treatment" || overdue ? "destructive" : "warning"}>{label}</Badge>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline">
+                <Link href={`/records?member=${member.id}#fu-${f.id}`}>추적검사 결과 입력</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })}
 
       <Card size="sm">
         <CardHeader>

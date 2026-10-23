@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { getDb } from "@/db";
-import { checkupItems, checkups, followUps, members, uploads } from "@/db/schema";
+import { checkupItems, checkups, followUpResults, followUps, members, uploads } from "@/db/schema";
 
 export const getMembers = () => getDb().select().from(members).orderBy(asc(members.createdAt));
 
@@ -58,9 +58,15 @@ export async function getMemberHistory(memberId: string) {
     db.select().from(checkupItems).where(inArray(checkupItems.checkupId, ids)),
     db.select().from(followUps).where(inArray(followUps.checkupId, ids)),
   ]);
+  const results = follows.length
+    ? await db.select().from(followUpResults).where(inArray(followUpResults.followUpId, follows.map((f) => f.id)))
+    : [];
   return rows.map((r) => ({
+    id: r.id,
     examDate: r.examDate,
     items: items.filter((i) => i.checkupId === r.id).sort((a, b) => a.position - b.position),
-    follows: follows.filter((f) => f.checkupId === r.id),
+    follows: follows
+      .filter((f) => f.checkupId === r.id)
+      .map((f) => ({ ...f, results: results.filter((x) => x.followUpId === f.id) })),
   }));
 }

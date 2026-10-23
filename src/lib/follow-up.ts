@@ -23,3 +23,32 @@ export function followUpState(due: Date | null, now = new Date()): FollowUpState
 
 export const formatYearMonth = (d: Date) => `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 export const formatExamDate = (s: string) => s.replaceAll("-", ".");
+
+// F-11: 추가검사 결과까지 반영한 추적 권고의 현재 상태
+export type FollowUpResult = { testedOn: string; outcome: "clear" | "continue" | "treatment"; nextMonths: number | null };
+export type EffectiveFollowUp =
+  | { status: "open"; due: Date | null; state: FollowUpState; basis: "recommendation" | "result" }
+  | { status: "resolved"; resolvedOn: string }
+  | { status: "treatment"; testedOn: string };
+
+export const outcomeLabel: Record<FollowUpResult["outcome"], string> = {
+  clear: "이상 없음",
+  continue: "추적 계속",
+  treatment: "치료 필요",
+};
+
+export function latestResult<T extends FollowUpResult>(results: T[]) {
+  return results.reduce<T | null>((acc, r) => (!acc || r.testedOn >= acc.testedOn ? r : acc), null);
+}
+
+export function effectiveFollowUp(examDate: string | null, months: number | null, results: FollowUpResult[], now = new Date()): EffectiveFollowUp {
+  const last = latestResult(results);
+  if (last?.outcome === "clear") return { status: "resolved", resolvedOn: last.testedOn };
+  if (last?.outcome === "treatment") return { status: "treatment", testedOn: last.testedOn };
+  if (last?.outcome === "continue") {
+    const due = followUpDue(last.testedOn, last.nextMonths);
+    return { status: "open", due, state: followUpState(due, now), basis: "result" };
+  }
+  const due = followUpDue(examDate, months);
+  return { status: "open", due, state: followUpState(due, now), basis: "recommendation" };
+}

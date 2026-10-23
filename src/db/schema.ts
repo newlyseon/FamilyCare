@@ -81,3 +81,20 @@ export const followUps = pgTable("follow_ups", {
   recommendedMonths: integer(),
   sourceText: text().notNull(),
 });
+
+export type FollowUpOutcome = "clear" | "continue" | "treatment";
+
+// 추적 권고에 대해 따로 받은 추가검사 결과 (F-10). 가장 최근 결과로 판정을 다시 한다 (F-11).
+export const followUpResults = pgTable("follow_up_results", {
+  id: uuid().primaryKey().defaultRandom(),
+  followUpId: uuid()
+    .notNull()
+    .references(() => followUps.id, { onDelete: "cascade" }),
+  testedOn: date().notNull(),
+  outcome: text().$type<FollowUpOutcome>().notNull(),
+  // "추적 계속"일 때 의사가 권고한 다음 검사까지의 개월 수
+  nextMonths: integer(),
+  hospital: text(),
+  memo: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

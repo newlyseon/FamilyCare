@@ -90,4 +90,54 @@ describe("judgeScreenings", () => {
     expect(r.cervical.category).toBe("required");
     expect(r.lung.category).toBe("na");
   });
+
+  describe("추가검사 결과 반영 (F-11)", () => {
+    const withThyroidResult = (results: HistoryCheckup["follows"][number]["results"]): HistoryCheckup => ({
+      ...sample2025,
+      follows: sample2025.follows.map((f) => (f.target === "갑상선 초음파" ? { ...f, results } : f)),
+    });
+    const thyroidOf = (c: HistoryCheckup) => judgeScreenings(father, [c], now).find((x) => x.title === "갑상선 초음파");
+
+    it("이상 없음이면 추적이 끝나 목록에서 빠진다", () => {
+      expect(thyroidOf(withThyroidResult([{ testedOn: "2026-06-10", outcome: "clear", nextMonths: null }]))).toBeUndefined();
+    });
+
+    it("추적 계속이면 그 검사일 + 새 권고 개월로 다시 계산한다", () => {
+      const t = thyroidOf(withThyroidResult([{ testedOn: "2026-06-10", outcome: "continue", nextMonths: 12 }]));
+      expect(t?.category).toBe("skip");
+      expect(t?.nextYear).toBe(2027);
+      expect(t?.reasons.join(" ")).toContain("추가검사: 2026.06.10 추적 계속");
+    });
+
+    it("추적 계속인데 다음 시기를 모르면 확인 필요", () => {
+      expect(thyroidOf(withThyroidResult([{ testedOn: "2026-06-10", outcome: "continue", nextMonths: null }]))?.category).toBe("check");
+    });
+
+    it("치료 필요면 확인 필요로 두고 의사 안내를 따르라고 한다", () => {
+      const t = thyroidOf(withThyroidResult([{ testedOn: "2026-06-10", outcome: "treatment", nextMonths: null }]));
+      expect(t?.category).toBe("check");
+      expect(t?.summary).toContain("담당 의사");
+    });
+
+    it("결과가 여러 번이면 가장 최근 결과를 쓴다", () => {
+      const t = thyroidOf(
+        withThyroidResult([
+          { testedOn: "2026-09-01", outcome: "clear", nextMonths: null },
+          { testedOn: "2026-06-10", outcome: "continue", nextMonths: 3 },
+        ]),
+      );
+      expect(t).toBeUndefined();
+    });
+
+    it("국가검진 항목의 추적이 이상 없음으로 끝나면 그 검사일부터 기본 주기로 돌아간다", () => {
+      const c: HistoryCheckup = {
+        ...sample2025,
+        follows: sample2025.follows.map((f) => (f.target === "대장내시경" ? { ...f, results: [{ testedOn: "2026-03-01", outcome: "clear" as const, nextMonths: null }] } : f)),
+      };
+      const colorectal = judgeScreenings(father, [c], now).find((x) => x.id === "colorectal");
+      // 대장암 검진 기본 주기 1년: 2026-03 + 12개월 = 2027-03
+      expect(colorectal?.category).toBe("skip");
+      expect(colorectal?.nextYear).toBe(2027);
+    });
+  });
 });
