@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import { checkupItems, checkups, followUps, members, uploads } from "@/db/schema";
 
@@ -42,4 +42,25 @@ export async function getLatestCheckup(memberId: string) {
     db.select().from(followUps).where(eq(followUps.checkupId, latest.checkup.id)),
   ]);
   return { ...latest.checkup, uploadId: latest.uploadId, items, follows };
+}
+
+// 판정(F-06)에 쓰는 부모님의 전체 검진 이력
+export async function getMemberHistory(memberId: string) {
+  const db = getDb();
+  const rows = await db
+    .select({ id: checkups.id, examDate: checkups.examDate })
+    .from(checkups)
+    .innerJoin(uploads, eq(checkups.uploadId, uploads.id))
+    .where(eq(uploads.memberId, memberId));
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const [items, follows] = await Promise.all([
+    db.select().from(checkupItems).where(inArray(checkupItems.checkupId, ids)),
+    db.select().from(followUps).where(inArray(followUps.checkupId, ids)),
+  ]);
+  return rows.map((r) => ({
+    examDate: r.examDate,
+    items: items.filter((i) => i.checkupId === r.id).sort((a, b) => a.position - b.position),
+    follows: follows.filter((f) => f.checkupId === r.id),
+  }));
 }

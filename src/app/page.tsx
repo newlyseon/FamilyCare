@@ -10,7 +10,8 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { followUpDue, followUpState, formatExamDate, formatYearMonth } from "@/lib/follow-up";
 import { dataEnabled } from "@/lib/guard";
 import { ageThisYear } from "@/lib/member-schema";
-import { getLatestCheckup, getMembers, getPendingReviews, hasConfirmedCheckup } from "@/lib/queries";
+import { getLatestCheckup, getMemberHistory, getMembers, getPendingReviews, hasConfirmedCheckup } from "@/lib/queries";
+import { judgeScreenings } from "@/lib/screening/judge";
 import { cn } from "@/lib/utils";
 import { UploadForm } from "./upload-form";
 
@@ -160,6 +161,11 @@ async function Returning({ members, memberParam, saved }: { members: MemberRow[]
   const urgent = follows.filter((f) => f.state === "overdue" || f.state === "soon");
   const scheduled = follows.filter((f) => f.state === "scheduled" || f.state === "unknown");
   const flagged = latest.items.filter((i) => i.judgment === "주의" || i.judgment === "이상" || i.judgment === "추적필요");
+  const verdicts = judgeScreenings(member, await getMemberHistory(member.id));
+  const required = verdicts.filter((v) => v.category === "required");
+  const recommended = verdicts.filter((v) => v.category === "recommended");
+  const skipped = verdicts.filter((v) => v.category === "skip");
+  const needsCheck = verdicts.filter((v) => v.category === "check");
 
   return (
     <div className="space-y-4">
@@ -176,8 +182,8 @@ async function Returning({ members, memberParam, saved }: { members: MemberRow[]
 
       <div className="flex gap-2">
         <Metric value={urgent.length} label="지금 확인" tone={urgent.length > 0 ? "danger" : "default"} />
+        <Metric value={required.length + recommended.length} label="올해 신청" />
         <Metric value={scheduled.length} label="정기 추적" />
-        <Metric value={flagged.length} label="주의 항목" />
       </div>
 
       {urgent.map((f) => (
@@ -197,13 +203,38 @@ async function Returning({ members, memberParam, saved }: { members: MemberRow[]
       <Card size="sm">
         <CardHeader>
           <CardTitle className="text-base">{new Date().getFullYear()} 신청할 검진</CardTitle>
-          <CardDescription>국가검진 주기와 추적 권고로 필수·권장 항목을 정리하는 기능을 준비하고 있어요.</CardDescription>
           <CardAction>
             <Button asChild variant="link" className="px-0">
-              <Link href={`/checkup?member=${member.id}`}>올해 검진</Link>
+              <Link href={`/checkup?member=${member.id}`}>전체 보기</Link>
             </Button>
           </CardAction>
         </CardHeader>
+        <CardContent className="space-y-2">
+          {required.length > 0 && (
+            <p className="flex items-start gap-2 text-base">
+              <Badge variant="warning" className="mt-0.5">
+                필수
+              </Badge>
+              <span>{required.map((v) => v.title).join(" · ")}</span>
+            </p>
+          )}
+          {recommended.length > 0 && (
+            <p className="flex items-start gap-2 text-base">
+              <Badge variant="secondary" className="mt-0.5">
+                권장
+              </Badge>
+              <span>{recommended.map((v) => v.title).join(" · ")}</span>
+            </p>
+          )}
+          {needsCheck.length > 0 && (
+            <p className="text-sm text-destructive">확인 필요 {needsCheck.length}개: {needsCheck.map((v) => v.title).join(" · ")}</p>
+          )}
+          {skipped.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              건너뜀: {skipped.map((v) => `${v.title}${v.nextYear ? ` (다음 ${v.nextYear})` : ""}`).join(" · ")}
+            </p>
+          )}
+        </CardContent>
       </Card>
 
       <Card size="sm">

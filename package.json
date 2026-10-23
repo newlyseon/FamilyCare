@@ -9,7 +9,8 @@
     "lint": "eslint",
     "nhis:recon": "node scripts/nhis-spike/recon.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate"
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "test": "vitest run"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.2",
@@ -41,7 +42,8 @@
     "eslint-config-next": "16.4.2",
     "playwright-core": "^1.64.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   },
   "packageManager": "pnpm@10.14.0"
 }
